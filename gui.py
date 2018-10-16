@@ -173,6 +173,7 @@ def trunc_filter(radius):
         restored[:,:,i] = abs(f_hat)
 
     displayr(restored) #display on canvas
+    window.destroy()
 
 #creates a new window with entry and button to input blur value
 def create_window_for_weiner():
@@ -224,6 +225,7 @@ def weiner_filter(K_small):
         f_hat = np.fft.ifft2( F_hat )
         restored[:,:,i] = abs(f_hat)
     displayr(restored) #display on canvas
+    window.destroy()
     
 def create_window_for_cls():
     global window
@@ -236,7 +238,7 @@ def create_window_for_cls():
         window.resizable(width=False,height=False) #not resizable
         entry_cls=tk.Entry(window)
         entry_cls.grid(row=2, column=1, columnspan=1,ipady=10)
-        bt = tk.Button(window, text='Enter', width=15, command=lambda:cls_filter(int(entry_cls.get())))
+        bt = tk.Button(window, text='Enter', width=15, command=lambda:cls_filter_constant_Y(int(entry_cls.get())))
         bt.grid(row=2, column=2, columnspan=1,ipady=10)
         bt.configure(background=colorval)
         text=tk.Text(window,height=3,width=100)
@@ -244,6 +246,39 @@ def create_window_for_cls():
         
         text.grid(row=1, column=1, columnspan=8, pady=15,ipady=10)
 
+
+def cls_filter_constant_Y(Y):
+    global img_bgr
+    global restored
+    for i in range (0,3):
+        g = img_bgr[:,:,i]
+        G =  (np.fft.fft2(g))
+        h = cv2.imread(kernel_filename,0)
+        h_padded = np.zeros((800,800)) 
+        h_padded[:h.shape[0],:h.shape[1]] = np.copy(h)
+        H =  (np.fft.fft2(h_padded))
+        
+        p = np.array([(0, -1, 0),
+                  (-1, 4, -1),
+                  (0, -1, 0)])
+        p_padded = np.zeros((800,800)) 
+        p_padded[:p.shape[0],:p.shape[1]] = np.copy(p)
+        P =  (np.fft.fft2(p_padded))
+        
+        H2 = (abs(H)**2 + Y*(abs(P)**2))/(np.conjugate(H))
+        H2_norm = H2/abs(H2.max())
+        
+        G_norm = G/abs(G.max())
+        F_temp = G_norm / H2_norm
+        F_norm = F_temp/abs(F_temp.max())
+        F_hat = F_norm*abs(G.max())
+        
+        f_hat = np.fft.ifft2( F_hat ) 
+        restored[:,:,i] = abs(f_hat)
+    displayr(restored) #display on canvas
+    window.destroy()
+    
+    
 def compute_r_eu_norm(G,H,P,Y):
     
     H2 = (abs(H)**2 + Y*(abs(P)**2))/(np.conjugate(H))
@@ -320,6 +355,7 @@ def cls_filter(Y_in):
         
         restored[:,:,i] = abs(f_hat)
     displayr(restored) #display on canvas
+    window.destroy()
     
 print("start")
 
